@@ -59,7 +59,10 @@ Where:
 
 ### Install and load necessary packages
 This study needs packages related to image processing, such as: `terra`, `sf`, and `googledrive`; moreover, packages related to result presentation are required, including `ggplot2`, `leaflet`, `dplyr`, and `RColorBrewer`.
-```{r, message=F, warning=F}
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: false
 library(terra)
 library(ggplot2)
 library(sf)
@@ -116,7 +119,9 @@ leaflet() %>%
 ```
 
 <br>The downloaded HLS images are uploaded to Google Drive, we can access this data folder through ID. Then, we will collect band 4 and band5 from the dataset. Partial code is presented as following:
-```{r, eval=F}
+```{r}
+#| eval: false
+#| code-fold: false
 # drive_auth() for first time to link Google Drive from R, we should do this authentication
 HLSImages_Folder_ID <- "MYGOOGLEFOLDERIDHERE"
 HLS_Everglades <- drive_ls(as_id(HLSImages_Folder_ID))
