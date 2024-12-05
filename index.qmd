@@ -89,7 +89,7 @@ white_mangrove <- st_transform(white_mangrove, crs_target)
 red_mangrove <- st_transform(red_mangrove, crs_target)
 ```
 
-```{r}
+```{r, echo=FALSE}
 # Leaflet is used to present the goegraphical locations of three mangrove species.
 colors <- c("Black Mangrove" = "black", 
             "White Mangrove" = "white", 
@@ -148,11 +148,11 @@ extract_id <- function(name) {
   sub(".*[?&]id=([a-zA-Z0-9_-]+).*", "\\1", name)
 }
 
-# Step 1: Create a mapping of 'id' -> DOY from HLS_band5
+# Create a mapping of 'id' -> DOY from HLS_band5
 HLS_band5$id <- sapply(HLS_band5$download_link, extract_id)
 link_to_doy <- setNames(HLS_band5$DOY, HLS_band5$id) # Create mapping: id -> DOY
 
-# Step 2: Check CRS of the sample points and rasters
+# Check CRS of the sample points and rasters
 print("Checking coordinate systems...")
 sample_crs <- st_crs(black_mangrove) # CRS of black mangrove points
 raster_crs <- crs(band5_rasters[[1]]) # CRS of the first raster (assumed consistent across rasters)
@@ -203,19 +203,16 @@ write.csv(extracted_band5_BM, "data/extracted_band5_BM.csv", row.names = FALSE)
 ```
 ### Extract phenology from time-series HLS
 -  NDVI values were retrieved for mangrove species sampling points. The extracted data were organized into a tabular format, with rows representing dates and columns representing NDVI values for each sample point.
-
--  Harmonic regression was employed to model the seasonal patterns in NDVI data. The fitted harmonic regression curves were plotted alongside the observed NDVI data points to visualize seasonal trends.
-
-```{r, echo=F, message=F, warning=F, results='hide', eval=F}
+```{r, collapse=T, message=F, warning=F, results='hide', eval=F}
 # Function to compute NDVI from Band 4 and Band 5 datasets
 compute_ndvi <- function(band4_file, band5_file, output_file) {
-  # Step 1: Read Band 4 and Band 5 CSV files
+  # Read Band 4 and Band 5 CSV files
   cat("Reading Band 4 data from:", band4_file, "\n")
   band4_data <- read.csv(band4_file)
   cat("Reading Band 5 data from:", band5_file, "\n")
   band5_data <- read.csv(band5_file)
   
-  # Step 2: Preprocess DOY columns
+  # Preprocess DOY columns
   cat("Preprocessing DOY columns...\n")
   band4_data$DOY <- as.numeric(trimws(band4_data$DOY))
   band5_data$DOY <- as.numeric(trimws(band5_data$DOY))
@@ -230,7 +227,7 @@ compute_ndvi <- function(band4_file, band5_file, output_file) {
     band5_data <- band5_data[!duplicated(band5_data$DOY), ]
   }
   
-  # Step 3: Identify common DOY
+  # Identify common DOY
   cat("Identifying common DOY values...\n")
   common_doy <- intersect(band4_data$DOY, band5_data$DOY)
   if (length(common_doy) == 0) {
@@ -246,7 +243,7 @@ compute_ndvi <- function(band4_file, band5_file, output_file) {
   band4_data <- band4_data[order(band4_data$DOY), ]
   band5_data <- band5_data[order(band5_data$DOY), ]
   
-  # Step 4: Check alignment of DOY columns
+  # Check alignment of DOY columns
   cat("Checking DOY alignment...\n")
   if (!all(band4_data$DOY == band5_data$DOY)) {
     mismatches <- which(band4_data$DOY != band5_data$DOY)
@@ -257,11 +254,11 @@ compute_ndvi <- function(band4_file, band5_file, output_file) {
   }
   cat("DOY columns are aligned.\n")
   
-  # Step 5: Initialize NDVI results
+  # Initialize NDVI results
   cat("Initializing NDVI results...\n")
   ndvi_results <- data.frame(DOY = band4_data$DOY)
   
-  # Step 6: Compute NDVI for each sample point
+  # Compute NDVI for each sample point
   cat("Computing NDVI for sample points...\n")
   for (col in 2:ncol(band4_data)) {  # Skip the DOY column
     band4_col <- band4_data[, col]
@@ -271,10 +268,10 @@ compute_ndvi <- function(band4_file, band5_file, output_file) {
     ndvi_results[, col] <- (band5_col - band4_col) / (band5_col + band4_col)
   }
   
-  # Step 7: Add column names to NDVI results
+  # Add column names to NDVI results
   colnames(ndvi_results) <- colnames(band4_data)
   
-  # Step 8: Save NDVI results to CSV
+  # Save NDVI results to CSV
   cat("Saving NDVI results to:", output_file, "\n")
   write.csv(ndvi_results, output_file, row.names = FALSE)
   cat("NDVI computation completed successfully.\n")
@@ -286,39 +283,40 @@ compute_ndvi("data/extracted_band4_WM.csv", "data/extracted_band5_WM.csv", "data
 ```
 
 ```{r, echo=F, message=F, warning=F, results='hide'}
-# Step 1: Read NDVI data for the three species
+# Read NDVI data for the three species
 BM_ndvi <- read.csv("data/ndvi_BM.csv")
 WM_ndvi <- read.csv("data/ndvi_WM.csv")
 RM_ndvi <- read.csv("data/ndvi_RM.csv")
 
-# Step 2: Calculate average NDVI for each species
+# Calculate average NDVI for each species
 Avg_BM_ndvi <- rowMeans(BM_ndvi[, -1], na.rm = TRUE)  # Exclude DOY column
 Avg_WM_ndvi <- rowMeans(WM_ndvi[, -1], na.rm = TRUE)
 Avg_RM_ndvi <- rowMeans(RM_ndvi[, -1], na.rm = TRUE)
 
-# Step 3: Combine data into a single dataframe for plotting
+# Combine data into a single dataframe for plotting
 avg_ndvi_data <- data.frame(
   Species = rep(c("Black Mangrove", "White Mangrove", "Red Mangrove"), 
                 times = c(length(Avg_BM_ndvi), length(Avg_WM_ndvi), length(Avg_RM_ndvi))),
   Average_NDVI = c(Avg_BM_ndvi, Avg_WM_ndvi, Avg_RM_ndvi)
 )
 
-# Step 4: Filter data to only include NDVI values between 0 and 1
+# Filter data to only include NDVI values between 0 and 1
 avg_ndvi_data <- avg_ndvi_data %>%
   filter(Average_NDVI > 0 & Average_NDVI < 1)
 
-# Step 5: Calculate group sizes for variable box widths
+# Calculate group sizes for variable box widths
 species_counts <- avg_ndvi_data %>%
   group_by(Species) %>%
   summarise(Count = n())
 
-# Step 6: Merge counts back into the main dataframe
+# Merge counts back into the main dataframe
 avg_ndvi_data <- avg_ndvi_data %>%
   left_join(species_counts, by = "Species")
-
 ```
 
-```{r, echo=F, message=F, warning=F, results='hide'}
+-  Harmonic regression was employed to model the seasonal patterns in NDVI data. The fitted harmonic regression curves were plotted alongside the observed NDVI data points to visualize seasonal trends.
+
+```{r, collapse=T, message=F, warning=F, results='hide'}
 # Function to preprocess DOY to extract the day of year
 preprocess_doy <- function(doy_column) {
   as.numeric(substr(doy_column, 5, 7))  # Extract last three digits
@@ -363,22 +361,22 @@ fit_harmonic_regression <- function(data, species_name) {
 
 
 ```{r, echo=F, message=F, warning=F, results='hide'}
-# Step 1: Load NDVI data for three species
+# Load NDVI data for three species
 species1_ndvi <- read.csv("data/ndvi_BM.csv")
 species2_ndvi <- read.csv("data/ndvi_WM.csv")
 species3_ndvi <- read.csv("data/ndvi_RM.csv")
 
-# Step 2: Calculate average NDVI for each species
+# Calculate average NDVI for each species
 species1_data <- data.frame(DOY = species1_ndvi$DOY, Average_NDVI = rowMeans(species1_ndvi[, -1], na.rm = TRUE))
 species2_data <- data.frame(DOY = species2_ndvi$DOY, Average_NDVI = rowMeans(species2_ndvi[, -1], na.rm = TRUE))
 species3_data <- data.frame(DOY = species3_ndvi$DOY, Average_NDVI = rowMeans(species3_ndvi[, -1], na.rm = TRUE))
 
-# Step 3: Fit harmonic regression for each species
+# Fit harmonic regression for each species
 species1_fit <- fit_harmonic_regression(species1_data, "Black Mangrove")
 species2_fit <- fit_harmonic_regression(species2_data, "White Mangrove")
 species3_fit <- fit_harmonic_regression(species3_data, "Red Mangrove")
 
-# Step 4: Combine predictions for visualization
+# Combine predictions for visualization
 all_predictions <- bind_rows(
   species1_fit$predictions %>% mutate(Species = "Black Mangrove"),
   species2_fit$predictions %>% mutate(Species = "White Mangrove"),
