@@ -11,6 +11,7 @@ website:
 format:
   html:
     theme: zephyr
+    code-fold: true
     toc: true
     toc-depth: 3
     toc-title: "Contents"
